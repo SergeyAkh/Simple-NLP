@@ -151,6 +151,7 @@ def train_network(X_train, y_train, hidden_neurons, num_epoch, batchsize = None,
         network.append(ReLU())
         network.append(Dense(hidden_neurons,num_input))
     results = []
+    time_elapsed_list = []
     for epoch in range(num_epoch):
         start_time = datetime.now() 
         passes = 0
@@ -159,7 +160,7 @@ def train_network(X_train, y_train, hidden_neurons, num_epoch, batchsize = None,
             passes += batchsize
             if passes % 100000 == 0:
                 time_elapsed = datetime.now() - start_time
-                print("done {:.1%} of epoch - {}, loss: {} \n time for 100000 samples: {}".format(passes / X_train.shape[0],epoch, loss ,time_elapsed))
+                print("done {:.1%} of epoch - {}, loss: {} \ntime for 100000 samples: {}".format(passes / X_train.shape[0],epoch, loss ,time_elapsed))
         results.append([epoch, loss])
         weights_1 = network[0].get_weights()
         weights_2 = network[2].get_weights()
