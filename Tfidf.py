@@ -44,7 +44,7 @@ class TFIDF:
         
         return norm_tfidf
     
-    def vocab(self):
+    def get_vocab(self):
         
         return self.dictionary
         
