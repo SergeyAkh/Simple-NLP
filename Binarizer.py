@@ -1,5 +1,4 @@
 import numpy as np
-from scipy import sparse as sp_sparse
 
 class Binarizer:
     def __init__(self):

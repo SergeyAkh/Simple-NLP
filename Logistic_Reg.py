@@ -1,9 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[72]:
-
-
 import numpy as np
 
 class MyLogisticRegression:
