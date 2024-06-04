@@ -1,7 +1,8 @@
 import numpy as np
+from datetime import datetime 
 
 class MyLogisticRegression:
-    def __init__(self, learning_rate = 1, num_iterations = 2000):
+    def __init__(self, learning_rate = 1, num_iterations = 2000 ):
         self.learning_rate = learning_rate
         self.num_iterations = num_iterations
         self.w = []
@@ -12,9 +13,16 @@ class MyLogisticRegression:
         Argument:
         dim -- size of the w vector we want (or number of parameters  in this case)
         """
+
         w = np.zeros((1,dim))
         b = 0
+
         return w, b
+    
+    def new_weights(self):
+        
+        self.w = []
+        self.b = 0
 
     def sigmoid(self,z):
         """
@@ -33,7 +41,9 @@ class MyLogisticRegression:
         X -- The input vector
         b -- The bias vector
         """
+
         H = self.sigmoid(np.dot(X, w.T)+b)
+        
         return H
 
     def cost(self,H,Y,m):
@@ -44,7 +54,9 @@ class MyLogisticRegression:
         Y -- The output
         m -- Number training samples
         """
-        cost = -np.sum(Y*np.log(H)+ (1-Y)*np.log(1-H))/m
+
+        cost = -np.sum(Y * np.log(H) + (1-Y)*np.log(1-H))/m
+
         cost = np.squeeze(cost)
         return cost
 
@@ -53,7 +65,7 @@ class MyLogisticRegression:
         Calculates gradient of the given model in learning space
         """
         m = X.shape[0]
-        
+
         dw = np.dot((H-Y).T,X)/m
         db = np.sum(H-Y)/m
         grads = {"dw": dw,
@@ -76,7 +88,7 @@ class MyLogisticRegression:
         grads = self.cal_gradient(w, H, X, Y) # compute gradient
         return grads, cost
 
-    def gradient_descent(self, w, b, X, Y, print_cost = False):
+    def gradient_descent(self, w, b, X, Y, batchsize):
         """
         This function optimizes w and b by running a gradient descent algorithm
 
@@ -92,24 +104,31 @@ class MyLogisticRegression:
         grads — dictionary containing the gradients of the weights and bias with respect to the cost function
         costs — list of all the costs computed during the optimization, this will be used to plot the learning curve.
         """
-
+        # Cost and gradient calculation
         costs = []
+        results = []
+        time_elapsed_list = []
         for i in range(self.num_iterations):
         # Cost and gradient calculation
-            grads, cost = self.gradient_position(w,b,X,Y)
-        # Retrieve derivatives from grads
-            dw = grads["dw"]
-            db = grads["db"]
-            # update rule
-            w = w - (self.learning_rate * dw)
-            b = b - (self.learning_rate * db)
+            batch_cost = []
+            for x_batch, y_batch in self.iterate_minibatches(X, Y, batchsize):
+                grads, cost = self.gradient_position(w,b,x_batch, y_batch)
+                # Retrieve derivatives from grads
+                dw = grads["dw"]
+                db = grads["db"]
+                # update rule
+                w = w - (self.learning_rate * dw)
+                b = b - (self.learning_rate * db)
+                batch_cost.append(cost)
+            cost_epoch = np.sum(batch_cost)/len(batch_cost)
+            costs.append(cost_epoch)
+            self.w = w
+            self.b = b
         # Record the costs
             if i % 100 == 0:
                 costs.append(cost)
             # Print the cost every 100 training iterations
-            if print_cost and i % 100 == 0:
-                print ("Cost after iteration %i: %f" %(i, cost))
-            
+
         params = {"w": w,
                       "b": b}
         grads = {"dw": dw,
@@ -118,19 +137,23 @@ class MyLogisticRegression:
         return params, grads, costs
     
     
-    def fit(self, X_train, Y_train):
+    def fit(self, X_train, Y_train, batchsize):
+
         dim = np.shape(X_train)[1]
+        
         w, b = self.initialize_weight(dim)
-        parameters, grads, costs = self.gradient_descent(w, b, X_train, Y_train, print_cost = False)
+
+        parameters, grads, cost = self.gradient_descent(w, b, X_train, Y_train, batchsize)
         self.w = parameters["w"]
         self.b = parameters["b"]
+
+        
         
     def get_param(self):
         '''
-        Retern trained parameters
+        Return trained parameters
         
         '''
-        
         return [self.w, self.b]
     
     
@@ -146,12 +169,12 @@ class MyLogisticRegression:
         Returns:
         Y_prediction -- a numpy array (vector) containing all predictions (0/1) for the examples in X
         '''
-        X = np.array(X)
         m = X.shape[0]
+        X = X.A
 
         Y_prediction = np.zeros((m,1))
         
-        w = self.w.reshape(1,X.shape[1])
+        w = self.w
         b = self.b
         # Compute vector "H"
         H = self.hypothesis(w, X, b)
@@ -162,7 +185,7 @@ class MyLogisticRegression:
             else:
                 Y_prediction[i,0] = 0
 
-        return Y_prediction
+        return Y_prediction.T
     
     def predict_proba(self,X):
         '''
@@ -176,14 +199,50 @@ class MyLogisticRegression:
         Returns:
         numpy array (vector) containing predictions for the outcomes
         '''
-        X = np.array(X)
-        m = X.shape[0]
-
-        Y_prediction = np.zeros((m,1))
         
-        w = self.w.reshape(1,X.shape[1])
-        b = self.b
-        # Compute vector "H"
+        m = X.shape[0]
+        X = X.A
+       
+        if len(self.w) != 0:
+            w = self.w
+            b = self.b
+        else:
+            dim = np.shape(X)[1]
+            w, b = self.initialize_weight(dim)
         H = self.hypothesis(w, X, b)
-        return np.c_[H,1-H]
+        return H
 
+    def iterate_minibatches(self, X_train, Y_train, batchsize = None, shuffle=False):
+        assert X_train.shape[0] == len(Y_train)
+        if shuffle:
+            indices_shuffle = np.random.permutation(Y_train.shape[0])
+        else:
+            indices = range(Y_train.shape[0])
+        if batchsize != None:
+            for start_idx in range(0, X_train.shape[0] - batchsize + 1, batchsize):
+                if shuffle:
+                    excerpt = indices_shuffle[start_idx:start_idx + batchsize]
+                else:
+                    
+                    excerpt = indices[start_idx:start_idx + batchsize]
+                
+                yield X_train[excerpt].A, Y_train[excerpt]
+        else:
+            batchsize = len(Y_train)
+            yield X_train.A, Y_train.reshape(batchsize,1)
+            
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        

@@ -35,6 +35,7 @@ class BagOfWords:
     def transform(self, text):
         
         ALL_WORDS = self.dictionary.keys()
+    
         TF_matrix = sp_sparse.lil_matrix((len(text),len(self.dictionary)))
                                 
         for row,sent in enumerate(text):
