@@ -1,9 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[2]:
-
-
 import numpy as np
 from numpy import savetxt
 from datetime import datetime 
@@ -46,7 +40,7 @@ class Dense(Layer):
             self.weights = np.random.normal(loc=0.0, scale = np.sqrt(2/(input_units+output_units)), 
                                         size = (input_units,output_units))
         else:
-            self.weights = np.random.randn(input_units, output_units)*0.01
+            self.weights =     *0.01
             
         self.biases = np.zeros(output_units)
         
