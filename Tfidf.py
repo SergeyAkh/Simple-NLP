@@ -6,6 +6,7 @@ class TFIDF:
         self.dictionary = {}
 
     def most_common_words(self, text):
+        
         words_counts = {}
 
         for i in text:

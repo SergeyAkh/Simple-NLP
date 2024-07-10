@@ -40,16 +40,16 @@ class Dense(Layer):
             self.weights = np.random.normal(loc=0.0, scale = np.sqrt(2/(input_units+output_units)), 
                                         size = (input_units,output_units))
         else:
-            self.weights =     *0.01
+            self.weights = np.random.normal(size = (input_units,output_units))
             
         self.biases = np.zeros(output_units)
         
     def forward(self,input):
-
+        """Forward propagetion"""
         return input.dot(self.weights)+self.biases
     
     def backward(self,input,grad_output):
-
+        """Back propagetion, compute new weights and biases"""
         grad_input = grad_output.dot(self.weights.T)
 
         grad_weights = input.T.dot(grad_output)

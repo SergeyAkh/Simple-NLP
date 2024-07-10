@@ -1,39 +1,44 @@
 import numpy as np
-from datetime import datetime 
+from datetime import datetime
+
 
 class MyLogisticRegression:
-    def __init__(self, learning_rate = 1, num_iterations = 2000 ):
+    def __init__(self, learning_rate = 1, num_iterations = 2000, regularization = None, C = None):
         self.learning_rate = learning_rate
         self.num_iterations = num_iterations
+        self.C = C
+        self.regularization = regularization
+        if self.regularization:
+            if self.C is None:
+                self.C = 0.01
+            else:
+                self.C = C
         self.w = []
         self.b = 0
-    def initialize_weight(self,dim):
+
+    def initialize_weight(self, dim):
         """
         This function creates a vector of zeros of shape (1,dim)      for w and initializes b to 0.
         Argument:
         dim -- size of the w vector we want (or number of parameters  in this case)
         """
 
-        w = np.zeros((1,dim))
-        b = 0
-
-        return w, b
-    
-    def new_weights(self):
-        
-        self.w = []
+        self.w = np.zeros((1, dim))
         self.b = 0
 
-    def sigmoid(self,z):
+        return self.w, self.b
+
+
+    def sigmoid(self, z):
         """
         Compute the sigmoid of z
         Argument:
         z -- is the decision boundary of the classifier
         """
-        s = 1/(1 + np.exp(-z))
+        s = 1 / (1 + np.exp(-z))
         return s
 
-    def hypothesis(self,w,X,b):
+    def hypothesis(self, w, X, b):
         """
         This function calculates the hypothesis for the present model
         Argument:
@@ -41,12 +46,11 @@ class MyLogisticRegression:
         X -- The input vector
         b -- The bias vector
         """
+        H = self.sigmoid(np.dot(X, w.T) + b)
 
-        H = self.sigmoid(np.dot(X, w.T)+b)
-        
         return H
 
-    def cost(self,H,Y,m):
+    def cost(self, H, Y, m, w, C):
         """
         This function calculates the cost of hypothesis
         Arguments:
@@ -54,25 +58,34 @@ class MyLogisticRegression:
         Y -- The output
         m -- Number training samples
         """
-
-        cost = -np.sum(Y * np.log(H) + (1-Y)*np.log(1-H))/m
+        m = Y.shape[0]
+        if self.regularization == 'l1':
+            cost = -np.sum(Y * np.log(H) + (1 - Y) * np.log(1 - H)) / m + np.sum(w)*C/(m)
+        elif self.regularization == 'l2':
+            cost = -np.sum(Y * np.log(H) + (1 - Y) * np.log(1 - H)) / m + np.sum(np.square(w))*C/(2*m)
+        else:
+            cost = -np.sum(Y * np.log(H) + (1 - Y) * np.log(1 - H)) / m
 
         cost = np.squeeze(cost)
         return cost
 
-    def cal_gradient(self, w,H,X,Y):
+    def cal_gradient(self, w, H, X, Y, C):
         """
         Calculates gradient of the given model in learning space
         """
         m = X.shape[0]
+        if self.regularization == 'l1':
+            dw = (np.dot((H - Y).T, X) + (C * np.sign(w)))/m
+        elif self.regularization == 'l2':
+            dw = (np.dot((H - Y).T, X) + (C * w))/m
+        else:
+            dw = np.dot((H - Y).T, X)/m
+        db = np.sum(H - Y) / m
+        # grads = {"dw": dw,
+        #          "db": db}
+        return dw, db
 
-        dw = np.dot((H-Y).T,X)/m
-        db = np.sum(H-Y)/m
-        grads = {"dw": dw,
-                 "db": db}
-        return grads
-
-    def gradient_position(self, w, b, X, Y):
+    def gradient_position(self, w, b, X, Y, C):
         """
         It just gets calls various functions to get status of learning model
         Arguments:
@@ -83,10 +96,11 @@ class MyLogisticRegression:
         """
 
         m = X.shape[1]
-        H = self.hypothesis(w,X,b)         # compute activation
-        cost = self.cost(H,Y,m)               # compute cost
-        grads = self.cal_gradient(w, H, X, Y) # compute gradient
-        return grads, cost
+
+        H = self.hypothesis(w, X, b)  # compute activation
+        cost = self.cost(H, Y, m, w, C)  # compute cost
+        dw, db = self.cal_gradient(w, H, X, Y, C)  # compute gradient
+        return dw, db, cost
 
     def gradient_descent(self, w, b, X, Y, batchsize):
         """
@@ -108,56 +122,53 @@ class MyLogisticRegression:
         costs = []
         results = []
         time_elapsed_list = []
+
         for i in range(self.num_iterations):
-        # Cost and gradient calculation
+            time_start_epoch = datetime.now()
+            # Cost and gradient calculation
             batch_cost = []
             for x_batch, y_batch in self.iterate_minibatches(X, Y, batchsize):
-                grads, cost = self.gradient_position(w,b,x_batch, y_batch)
+                dw, db, cost = self.gradient_position(w, b, x_batch, y_batch, self.C)
                 # Retrieve derivatives from grads
-                dw = grads["dw"]
-                db = grads["db"]
+                # dw = grads["dw"]
+                # db = grads["db"]
                 # update rule
                 w = w - (self.learning_rate * dw)
                 b = b - (self.learning_rate * db)
-                batch_cost.append(cost)
-            cost_epoch = np.sum(batch_cost)/len(batch_cost)
-            costs.append(cost_epoch)
-            self.w = w
-            self.b = b
-        # Record the costs
-            if i % 100 == 0:
-                costs.append(cost)
-            # Print the cost every 100 training iterations
+                # batch_cost.append(cost)
+                self.w = w
+                self.b = b
 
-        params = {"w": w,
-                      "b": b}
-        grads = {"dw": dw,
-                    "db": db}
+            # print(f"time per epoch = {i}: {datetime.now() - time_start_epoch}, cost: {cost}")
 
-        return params, grads, costs
-    
-    
+
+        return costs
+
     def fit(self, X_train, Y_train, batchsize):
-
+        time_start_training = datetime.now()
         dim = np.shape(X_train)[1]
         
         w, b = self.initialize_weight(dim)
 
-        parameters, grads, cost = self.gradient_descent(w, b, X_train, Y_train, batchsize)
-        self.w = parameters["w"]
-        self.b = parameters["b"]
+        cost = self.gradient_descent(w, b, X_train, Y_train, batchsize)
 
-        
-        
+
+
     def get_param(self):
         '''
         Return trained parameters
-        
+
         '''
-        return [self.w, self.b]
-    
-    
-    def predict(self,X):
+        return {"w": self.w,
+                 "b": np.array(self.b).reshape((1, 1))}
+
+    def print_param(self):
+        print(f'learning rate is: {self.learning_rate}\n'
+              f'number of iteration is: {self.num_iterations}\n'
+              f'regularization: {self.regularization}\n'
+              f'regularization strength: {self.C}')
+
+    def predict(self, X):
         '''
         Predict whether the label is 0 or 1 using learned logistic regression parameters (w, b)
 
@@ -170,24 +181,24 @@ class MyLogisticRegression:
         Y_prediction -- a numpy array (vector) containing all predictions (0/1) for the examples in X
         '''
         m = X.shape[0]
-        X = X.A
+        X = X.toarray()
 
-        Y_prediction = np.zeros((m,1))
-        
+        Y_prediction = np.zeros((m, 1))
+
         w = self.w
         b = self.b
         # Compute vector "H"
         H = self.hypothesis(w, X, b)
         for i in range(H.shape[0]):
-        # Convert probabilities H[i,0] to actual predictions p[i,0]
-            if H[i,0] >= 0.5:
-                Y_prediction[i,0] = 1
+            # Convert probabilities H[i,0] to actual predictions p[i,0]
+            if H[i, 0] >= 0.5:
+                Y_prediction[i, 0] = 1
             else:
-                Y_prediction[i,0] = 0
+                Y_prediction[i, 0] = 0
 
         return Y_prediction.T
-    
-    def predict_proba(self,X):
+
+    def predict_proba(self, X):
         '''
         Calculate probabilities  using learned logistic regression parameters (w, b)
 
@@ -199,10 +210,10 @@ class MyLogisticRegression:
         Returns:
         numpy array (vector) containing predictions for the outcomes
         '''
-        
+
         m = X.shape[0]
-        X = X.A
-       
+        X = X.toarray()
+
         if len(self.w) != 0:
             w = self.w
             b = self.b
@@ -212,7 +223,7 @@ class MyLogisticRegression:
         H = self.hypothesis(w, X, b)
         return H
 
-    def iterate_minibatches(self, X_train, Y_train, batchsize = None, shuffle=False):
+    def iterate_minibatches(self, X_train, Y_train, batchsize=None, shuffle=False):
         assert X_train.shape[0] == len(Y_train)
         if shuffle:
             indices_shuffle = np.random.permutation(Y_train.shape[0])
@@ -223,26 +234,10 @@ class MyLogisticRegression:
                 if shuffle:
                     excerpt = indices_shuffle[start_idx:start_idx + batchsize]
                 else:
-                    
+
                     excerpt = indices[start_idx:start_idx + batchsize]
-                
-                yield X_train[excerpt].A, Y_train[excerpt]
+
+                yield X_train[excerpt].toarray(), Y_train[excerpt]
         else:
             batchsize = len(Y_train)
-            yield X_train.A, Y_train.reshape(batchsize,1)
-            
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+            yield X_train.toarray(), Y_train.reshape(batchsize, 1)
