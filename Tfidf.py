@@ -43,7 +43,7 @@ class TFIDF:
         tfidf = TF_matrix.multiply(idf)
         norm_tfidf = tfidf.multiply(1/np.sqrt(np.sum(tfidf.power(2), axis = 1)).reshape((length_rows,1)))
         
-        return norm_tfidf
+        return sp_sparse.lil_matrix(norm_tfidf)
     
     def get_vocab(self):
         
