@@ -49,7 +49,9 @@ class PCA:
         # Plot the explained variance against cumulative explained variance
         #
         cum_sum_exp = np.cumsum(var_exp)
-        plt.bar(range(0,len(var_exp)), var_exp, alpha=0.5, align='center', label='Individual explained variance')
+        plt.figure(dpi=100)
+        plt.bar(range(0,len(var_exp)), var_exp, alpha=0.5, align='center', 
+                label='Individual explained variance',color='red')
         plt.step(range(0,len(cum_sum_exp)), cum_sum_exp, where='mid',label='Cumulative explained variance')
         plt.ylabel('Explained variance ratio')
         plt.xlabel('Principal component index')
@@ -62,6 +64,7 @@ class PCA:
         data_to_plot = data[num_of_rows]
         A = [i[0] for i in data_to_plot]
         B = [i[1] for i in data_to_plot]
+        
         fig, ax = plt.subplots()
         ax.set_xlabel("Component_1")
         ax.set_ylabel("Component_2")

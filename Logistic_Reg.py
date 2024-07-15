@@ -4,6 +4,19 @@ from datetime import datetime
 
 class MyLogisticRegression:
     def __init__(self, learning_rate = 1, num_iterations = 2000, regularization = None, C = None):
+        """
+        The parameters of logistic regression function.
+        
+        Argument:
+        learning_rate -- the parameter that influense on vector of gradients (by default = 1)
+        
+        num_iterations -- number of steps in order to get best convergense of function
+        
+        regularization -- type of regularization "l1" or 'l2' (by default no regularization)
+        
+        C -- the strength of regularization (by default none)
+        
+        """
         self.learning_rate = learning_rate
         self.num_iterations = num_iterations
         self.C = C
@@ -18,7 +31,7 @@ class MyLogisticRegression:
 
     def initialize_weight(self, dim):
         """
-        This function creates a vector of zeros of shape (1,dim)      for w and initializes b to 0.
+        This function creates a vector of zeros of shape (1,dim) for w and initializes b to 0.
         Argument:
         dim -- size of the w vector we want (or number of parameters  in this case)
         """
@@ -34,6 +47,7 @@ class MyLogisticRegression:
         Compute the sigmoid of z
         Argument:
         z -- is the decision boundary of the classifier
+        
         """
         s = 1 / (1 + np.exp(-z))
         return s
@@ -41,6 +55,7 @@ class MyLogisticRegression:
     def hypothesis(self, w, X, b):
         """
         This function calculates the hypothesis for the present model
+        
         Argument:
         w -- weight vector
         X -- The input vector
@@ -53,10 +68,13 @@ class MyLogisticRegression:
     def cost(self, H, Y, m, w, C):
         """
         This function calculates the cost of hypothesis
+        
         Arguments:
-        H -- The hypothesis vector
-        Y -- The output
-        m -- Number training samples
+        H -- the hypothesis vector
+        Y -- the output
+        m -- number of training samples
+        w -- weights
+        C -- strength of regularization
         """
         m = Y.shape[0]
         if self.regularization == 'l1':
@@ -71,7 +89,9 @@ class MyLogisticRegression:
 
     def cal_gradient(self, w, H, X, Y, C):
         """
-        Calculates gradient of the given model in learning space
+        Calculates gradient of the given model in learning space with given regularization parameter
+
+        
         """
         m = X.shape[0]
         if self.regularization == 'l1':
@@ -81,18 +101,24 @@ class MyLogisticRegression:
         else:
             dw = np.dot((H - Y).T, X)/m
         db = np.sum(H - Y) / m
-        # grads = {"dw": dw,
-        #          "db": db}
+
         return dw, db
 
     def gradient_position(self, w, b, X, Y, C):
         """
         It just gets calls various functions to get status of learning model
         Arguments:
-        w -- weights, a numpy array of size (no. of features, 1)
+        w -- weights
         b -- bias, a scalar
-        X -- data of size (no. of features, number of examples)
-        Y -- true "label" vector (containing 0 or 1 ) of size (1, number of examples)
+        X -- data
+        Y -- true "label" vector (containing 0 or 1 )
+        C -- strength of regularization
+        
+        Returns:
+
+        dw —- gradients of weights
+        db -- gradients of biases
+        cost -- costs
         """
 
         m = X.shape[1]
@@ -104,19 +130,19 @@ class MyLogisticRegression:
 
     def gradient_descent(self, w, b, X, Y, batchsize):
         """
-        This function optimizes w and b by running a gradient descent algorithm
+        This function optimizes w and b by running a gradient descent algorithm and store the weigths in self
 
         Arguments:
         w — weights, a numpy array of size (num_px * num_px * 3, 1)
         b — bias, a scalar
         X -- data of size (no. of features, number of examples)
         Y -- true "label" vector (containing 0 or 1 ) of size (1, number of examples)
-        print_cost — True to print the loss every 100 steps
+        batchsize -- size of batches
+
 
         Returns:
-        params — dictionary containing the weights w and bias b
-        grads — dictionary containing the gradients of the weights and bias with respect to the cost function
-        costs — list of all the costs computed during the optimization, this will be used to plot the learning curve.
+
+        costs — list of all the costs computed during the optimization.
         """
         # Cost and gradient calculation
         costs = []
@@ -125,27 +151,33 @@ class MyLogisticRegression:
 
         for i in range(self.num_iterations):
             time_start_epoch = datetime.now()
-            # Cost and gradient calculation
+
             batch_cost = []
             for x_batch, y_batch in self.iterate_minibatches(X, Y, batchsize):
                 dw, db, cost = self.gradient_position(w, b, x_batch, y_batch, self.C)
-                # Retrieve derivatives from grads
-                # dw = grads["dw"]
-                # db = grads["db"]
-                # update rule
                 w = w - (self.learning_rate * dw)
                 b = b - (self.learning_rate * db)
-                # batch_cost.append(cost)
+
                 self.w = w
                 self.b = b
-
-            # print(f"time per epoch = {i}: {datetime.now() - time_start_epoch}, cost: {cost}")
-
 
         return costs
 
     def fit(self, X_train, Y_train, batchsize):
-        time_start_training = datetime.now()
+        """
+        Function that runs the learning process
+
+        Arguments:
+        X_train -- whole matrix of train data
+        Y_train -- whole matrix of groun truth
+        batchsize -- size of batches
+
+
+        Returns:
+
+        This function returns nothing but an optimized weights
+        """
+        
         dim = np.shape(X_train)[1]
         
         w, b = self.initialize_weight(dim)
@@ -156,13 +188,17 @@ class MyLogisticRegression:
 
     def get_param(self):
         '''
-        Return trained parameters
+        Return trained parameters. Call this function to get the trained weigths
 
         '''
         return {"w": self.w,
                  "b": np.array(self.b).reshape((1, 1))}
 
     def print_param(self):
+        '''
+        Function that prints out all the arguments of the logistic regression function
+
+        '''
         print(f'learning rate is: {self.learning_rate}\n'
               f'number of iteration is: {self.num_iterations}\n'
               f'regularization: {self.regularization}\n'
@@ -173,8 +209,7 @@ class MyLogisticRegression:
         Predict whether the label is 0 or 1 using learned logistic regression parameters (w, b)
 
         Arguments:
-        w -- weights, a numpy array of size (1,n)
-        b -- bias, a scalar
+
         X -- data of size (number of examples * num_features)
 
         Returns:
@@ -203,8 +238,7 @@ class MyLogisticRegression:
         Calculate probabilities  using learned logistic regression parameters (w, b)
 
         Arguments:
-        w -- weights, a numpy array of size (1,n)
-        b -- bias, a scalar
+
         X -- data of size (number of examples * num_features)
 
         Returns:
@@ -224,6 +258,19 @@ class MyLogisticRegression:
         return H
 
     def iterate_minibatches(self, X_train, Y_train, batchsize=None, shuffle=False):
+        '''
+        Iterator that allows generate batches shuffeled or not with given size and feed them to the model.
+
+        Arguments:
+
+        X_train -- whole matrix of train data
+        Y_train -- whole matrix of groun truth
+        batchsize -- size of batches (if nothing is set then the whole data)
+        shuffle -- indicator to shuffle the data (by default no shuffle)
+
+        Returns:
+        Iterator with batches
+        '''
         assert X_train.shape[0] == len(Y_train)
         if shuffle:
             indices_shuffle = np.random.permutation(Y_train.shape[0])
