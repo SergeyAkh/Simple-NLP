@@ -6,7 +6,17 @@ class TFIDF:
         self.dictionary = {}
 
     def most_common_words(self, text):
+        """
+        This function calculates the frequency of appearance for each word
         
+        Argument:
+        text -- whole text corpus
+
+        Returns:
+        
+        Dictionary of unique words and corresponding number
+                
+        """
         words_counts = {}
 
         for i in text:

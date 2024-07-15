@@ -5,7 +5,7 @@ from datetime import datetime
 class MyLogisticRegression:
     def __init__(self, learning_rate = 1, num_iterations = 2000, regularization = None, C = None):
         """
-        The parameters of logistic regression function.
+        The parameters of logistic regression class.
         
         Argument:
         learning_rate -- the parameter that influense on vector of gradients (by default = 1)
