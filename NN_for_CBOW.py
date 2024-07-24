@@ -29,7 +29,7 @@ class ReLU(Layer):
         return grad_output*relu_grad    
 
 class Dense(Layer):
-    def __init__(self, input_units, output_units, learning_rate=0.1, initialization = None, weights = None):
+    def __init__(self, input_units, output_units, learning_rate = None, initialization = None, weights = None):
 
         self.learning_rate = learning_rate
         
@@ -132,18 +132,18 @@ def iterate_minibatches(inputs, targets, batchsize = None, shuffle=False):
     else:
         yield inputs, targets
         
-def train_network(X_train, y_train, hidden_neurons, num_epoch, batchsize = None, initialization = None, weights_1 = None, weights_2 = None):
+def train_network(X_train, y_train, hidden_neurons, num_epoch, learning_rate, batchsize = None, initialization = None, weights_1 = None, weights_2 = None):
     num_input = X_train.shape[1]
     num_output = len(np.unique(y_train))
     network = []
     if initialization != None:
-        network.append(Dense(num_input,hidden_neurons, initialization = initialization,weights = weights_1))
+        network.append(Dense(num_input,hidden_neurons, learning_rate, initialization = initialization,weights = weights_1))
         network.append(ReLU())
-        network.append(Dense(hidden_neurons,num_input, initialization = initialization,weights = weights_2))
+        network.append(Dense(hidden_neurons,num_input, learning_rate, initialization = initialization,weights = weights_2))
     else:
-        network.append(Dense(num_input,hidden_neurons))
+        network.append(Dense(num_input,hidden_neurons, learning_rate))
         network.append(ReLU())
-        network.append(Dense(hidden_neurons,num_input))
+        network.append(Dense(hidden_neurons,num_input, learning_rate))
     results = []
     time_elapsed_list = []
     for epoch in range(num_epoch):

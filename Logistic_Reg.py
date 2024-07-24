@@ -34,11 +34,11 @@ class MyLogisticRegression:
         This function creates a vector of zeros of shape (1,dim) for w and initializes b to 0.
         Argument:
         dim -- size of the w vector we want (or number of parameters  in this case)
+        
         """
 
-        self.w = np.zeros((1, dim))
+        self.w = 0.01 * np.random.randn(1,dim)
         self.b = 0
-
         return self.w, self.b
 
 
