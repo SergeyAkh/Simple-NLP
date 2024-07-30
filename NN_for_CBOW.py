@@ -26,7 +26,36 @@ class ReLU(Layer):
     
     def backward(self, input, grad_output):
         relu_grad = input > 0
-        return grad_output*relu_grad    
+        return grad_output*relu_grad
+
+class Embeding(Layer):
+    def __init__(self, input_units, output_units, learning_rate = None, initialization = None, weights = None):
+        self.learning_rate = learning_rate
+        
+        if initialization == "custom":
+            self.weights = weights
+        
+        elif initialization == "xavier":
+            self.weights = np.random.normal(loc=0.0, scale = np.sqrt(2/(input_units+output_units)), 
+                                        size = (input_units,output_units))
+        else:
+            self.weights = np.random.normal(size = (input_units,output_units))
+    
+    def forward(self, input):
+        return input.dot(self.weights)
+    
+    def bacward(self, input):
+        
+        return input
+    
+    def get_weights(self,input,grad_output):
+        grad_input = self.weights
+        
+        grad_weights = input
+        
+        self.weights = self.weights - self.learning_rate * grad_weights
+        
+        return grad_input
 
 class Dense(Layer):
     def __init__(self, input_units, output_units, learning_rate = None, initialization = None, weights = None):
@@ -42,21 +71,22 @@ class Dense(Layer):
         else:
             self.weights = np.random.normal(size = (input_units,output_units))
             
-        self.biases = np.zeros(output_units)
+        # self.biases = np.zeros(output_units)
         
     def forward(self,input):
         """Forward propagetion"""
-        return input.dot(self.weights)+self.biases
+        return input.dot(self.weights)
+    # +self.biases
     
     def backward(self,input,grad_output):
         """Back propagetion, compute new weights and biases"""
         grad_input = grad_output.dot(self.weights.T)
 
         grad_weights = input.T.dot(grad_output)
-        grad_biases = np.sum(grad_output,axis=0)
+        # grad_biases = np.sum(grad_output,axis=0)
         
         self.weights = self.weights - self.learning_rate * grad_weights
-        self.biases = self.biases - self.learning_rate * grad_biases
+        # self.biases = self.biases - self.learning_rate * grad_biases
         
         return grad_input
     
@@ -75,6 +105,7 @@ def softmax_crossentropy_with_logits(logits,reference_answers):
 def grad_softmax_crossentropy_with_logits(logits,reference_answers):
     """Compute crossentropy gradient from logits[batch,n_classes] and ids of correct answers"""
     ones_for_answers = np.zeros_like(logits)
+    
     ones_for_answers[np.arange(len(logits)),reference_answers] = 1
     
     softmax = np.exp(logits) / np.exp(logits).sum(axis=-1,keepdims=True)
@@ -105,6 +136,7 @@ def train(network,X,y):
     logits = layer_activations[-1]
     
     # Compute the loss and the initial gradient
+    y = np.argmax(y)
     loss = softmax_crossentropy_with_logits(logits,y)
     loss_grad = grad_softmax_crossentropy_with_logits(logits,y)
     
@@ -118,7 +150,7 @@ def train(network,X,y):
     return np.mean(loss)
 
 def iterate_minibatches(inputs, targets, batchsize = None, shuffle=False):
-    assert inputs.shape[0] == len(targets)
+    assert inputs.shape[0] == targets.shape[0]
     if shuffle:
         indices = np.random.permutation(inputs.shape[0])
     
@@ -128,41 +160,42 @@ def iterate_minibatches(inputs, targets, batchsize = None, shuffle=False):
                 excerpt = indices[start_idx:start_idx + batchsize]
             else:
                 excerpt = slice(start_idx, start_idx + batchsize)
-            yield inputs[excerpt], targets[excerpt]
+            yield inputs[excerpt].toarray(), targets[excerpt].toarray()
     else:
-        yield inputs, targets
+        yield inputs.toarray(), targets.toarray()
         
 def train_network(X_train, y_train, hidden_neurons, num_epoch, learning_rate, batchsize = None, initialization = None, weights_1 = None, weights_2 = None):
-    num_input = X_train.shape[1]
-    num_output = len(np.unique(y_train))
+    num_input, num_output = X_train.shape[1], y_train.shape[1]
     network = []
     if initialization != None:
         network.append(Dense(num_input,hidden_neurons, learning_rate, initialization = initialization,weights = weights_1))
-        network.append(ReLU())
-        network.append(Dense(hidden_neurons,num_input, learning_rate, initialization = initialization,weights = weights_2))
+        # network.append(ReLU())
+        network.append(Dense(hidden_neurons,num_output, learning_rate, initialization = initialization,weights = weights_2))
     else:
         network.append(Dense(num_input,hidden_neurons, learning_rate))
-        network.append(ReLU())
-        network.append(Dense(hidden_neurons,num_input, learning_rate))
+        # network.append(ReLU())
+        network.append(Dense(hidden_neurons,num_output, learning_rate))
     results = []
     time_elapsed_list = []
+
     for epoch in range(num_epoch):
         start_time = datetime.now() 
         passes = 0
         for x_batch,y_batch in iterate_minibatches(X_train, y_train, batchsize = batchsize):
             loss = train(network,x_batch,y_batch)
+            # print(loss)
             passes += batchsize
             if passes % 100000 == 0:
                 time_elapsed = datetime.now() - start_time
                 print("done {:.1%} of epoch - {}, loss: {} \ntime for 100000 samples: {}".format(passes / X_train.shape[0],epoch, loss ,time_elapsed))
         results.append([epoch, loss])
-        weights_1 = network[0].get_weights()
-        weights_2 = network[2].get_weights()
+        weights_1 = network[-2].get_weights()
+        weights_2 = network[-1].get_weights()
         savetxt('weights_1.csv', weights_1, delimiter=',')
         savetxt('weights_2.csv', weights_2, delimiter=',')
         print("done epoch: {}, loss: {} \n weights saved".format(epoch, loss))
-    weights_1 = network[0].get_weights()
-    weights_2 = network[2].get_weights()
+    weights_1 = network[-2].get_weights()
+    weights_2 = network[-1].get_weights()
     
     return results,weights_1,weights_2
 

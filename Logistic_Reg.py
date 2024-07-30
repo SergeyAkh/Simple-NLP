@@ -3,7 +3,7 @@ from datetime import datetime
 
 
 class MyLogisticRegression:
-    def __init__(self, learning_rate = 1, num_iterations = 2000, regularization = None, C = None):
+    def __init__(self, learning_rate = 1, num_iterations = 2000, regularization = None, C = None, initialization = None):
         """
         The parameters of logistic regression class.
         
@@ -17,6 +17,7 @@ class MyLogisticRegression:
         C -- the strength of regularization (by default none)
         
         """
+        self.initialization = initialization
         self.learning_rate = learning_rate
         self.num_iterations = num_iterations
         self.C = C
@@ -31,13 +32,21 @@ class MyLogisticRegression:
 
     def initialize_weight(self, dim):
         """
-        This function creates a vector of zeros of shape (1,dim) for w and initializes b to 0.
+        This function creates weights vector of shape (1,dim) for w and initializes b = 0.
         Argument:
-        dim -- size of the w vector we want (or number of parameters  in this case)
+        dim -- size of the w vector we want (or number of parameters in this case)
         
         """
+        if self.initialization == "xavier":
+            self.w = np.random.normal(loc=0.0, scale = np.sqrt(2/(1+dim)), 
+                                        size = (1,dim))
+        elif self.initialization == "normal":
+            self.w = np.random.normal(size = (1,dim))
+            
+        else:
+        
+            self.w = 0.01 * np.random.randn(1,dim)
 
-        self.w = 0.01 * np.random.randn(1,dim)
         self.b = 0
         return self.w, self.b
 
