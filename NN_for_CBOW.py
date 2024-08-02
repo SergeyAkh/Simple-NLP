@@ -18,7 +18,21 @@ class Layer:
         return np.dot(grad_output, d_layer_d_input)
     
 class ReLU(Layer):
+
     def __init__(self):
+        """
+        ReLU activation .
+        
+        Argument:
+        learning_rate -- the parameter that influense on vector of gradients (by default = 1)
+        
+        num_iterations -- number of steps in order to get best convergense of function
+        
+        regularization -- type of regularization "l1" or 'l2' (by default no regularization)
+        
+        C -- the strength of regularization (by default none)
+        
+        """
         pass
     
     def forward(self, input):
@@ -28,34 +42,6 @@ class ReLU(Layer):
         relu_grad = input > 0
         return grad_output*relu_grad
 
-class Embeding(Layer):
-    def __init__(self, input_units, output_units, learning_rate = None, initialization = None, weights = None):
-        self.learning_rate = learning_rate
-        
-        if initialization == "custom":
-            self.weights = weights
-        
-        elif initialization == "xavier":
-            self.weights = np.random.normal(loc=0.0, scale = np.sqrt(2/(input_units+output_units)), 
-                                        size = (input_units,output_units))
-        else:
-            self.weights = np.random.normal(size = (input_units,output_units))
-    
-    def forward(self, input):
-        return input.dot(self.weights)
-    
-    def bacward(self, input):
-        
-        return input
-    
-    def get_weights(self,input,grad_output):
-        grad_input = self.weights
-        
-        grad_weights = input
-        
-        self.weights = self.weights - self.learning_rate * grad_weights
-        
-        return grad_input
 
 class Dense(Layer):
     def __init__(self, input_units, output_units, learning_rate = None, initialization = None, weights = None):
