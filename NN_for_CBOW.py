@@ -22,16 +22,7 @@ class ReLU(Layer):
     def __init__(self):
         """
         ReLU activation .
-        
-        Argument:
-        learning_rate -- the parameter that influense on vector of gradients (by default = 1)
-        
-        num_iterations -- number of steps in order to get best convergense of function
-        
-        regularization -- type of regularization "l1" or 'l2' (by default no regularization)
-        
-        C -- the strength of regularization (by default none)
-        
+               
         """
         pass
     
